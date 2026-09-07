@@ -15,3 +15,10 @@ Dashboard rekapitulasi keuangan real-time dengan integrasi workflow otomatis.
 
 ```bash
 npm install
+```
+
+## Menjalankan
+
+```bash
+npm run dev
+```
