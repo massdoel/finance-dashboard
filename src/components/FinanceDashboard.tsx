@@ -2,7 +2,7 @@ import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Wallet, RefreshCw, CheckCircle2,
   AlertCircle, Clock, Zap, ArrowUpRight, ArrowDownRight,
-  Webhook, FileText
+  Webhook, FileText, LogOut, PlusCircle, DollarSign
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -87,9 +87,306 @@ const getStatusConfig = (status: WorkflowStatus) => {
   return configs[status];
 };
 
+// --- LOGIN COMPONENT ---
+interface LoginPageProps {
+  onLogin: () => void;
+}
+
+function LoginPage({ onLogin }: LoginPageProps) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    // Simulate authentication
+    setTimeout(() => {
+      if (username === 'admin' && password === 'admin123') {
+        localStorage.setItem('isLoggedIn', 'true');
+        onLogin();
+      } else {
+        setError('Username atau password salah!');
+        setIsLoading(false);
+      }
+    }, 500);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Wallet className="w-8 h-8 text-indigo-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Login Admin</h1>
+          <p className="text-slate-400 text-sm mt-2">Masuk untuk mengelola keuangan</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Masukkan username"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Masukkan password"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          >
+            {isLoading ? 'Memproses...' : 'Login'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-xs text-slate-500">
+          <p>Default: username: <code className="bg-slate-800 px-2 py-1 rounded">admin</code>, password: <code className="bg-slate-800 px-2 py-1 rounded">admin123</code></p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- INCOME FORM COMPONENT ---
+interface IncomeFormProps {
+  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'workflowStatus' | 'source'>) => void;
+  onClose: () => void;
+}
+
+function IncomeForm({ onAddTransaction, onClose }: IncomeFormProps) {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('Penjualan');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddTransaction({
+      date,
+      description,
+      amount: parseFloat(amount),
+      type: 'income',
+      category,
+    } as Omit<Transaction, 'id' | 'workflowStatus' | 'source'>);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <ArrowUpRight className="w-5 h-5 text-emerald-400" />
+            Tambah Pemasukan
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Tanggal</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Deskripsi</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="Contoh: Penjualan Produk A"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Jumlah (Rp)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="0"
+              min="0"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Kategori</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="Penjualan">Penjualan</option>
+              <option value="Jasa">Jasa</option>
+              <option value="Investasi">Investasi</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Simpan Pemasukan
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- EXPENSE FORM COMPONENT ---
+interface ExpenseFormProps {
+  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'workflowStatus' | 'source'>) => void;
+  onClose: () => void;
+}
+
+function ExpenseForm({ onAddTransaction, onClose }: ExpenseFormProps) {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('Operasional');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddTransaction({
+      date,
+      description,
+      amount: parseFloat(amount),
+      type: 'expense',
+      category,
+    } as Omit<Transaction, 'id' | 'workflowStatus' | 'source'>);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <ArrowDownRight className="w-5 h-5 text-rose-400" />
+            Tambah Pengeluaran
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Tanggal</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Deskripsi</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+              placeholder="Contoh: Pembelian Alat Tulis"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Jumlah (Rp)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+              placeholder="0"
+              min="0"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Kategori</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="Operasional">Operasional</option>
+              <option value="Infrastruktur">Infrastruktur</option>
+              <option value="Gaji">Gaji</option>
+              <option value="Pemasaran">Pemasaran</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-rose-600 hover:bg-rose-500 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Simpan Pengeluaran
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // --- MAIN COMPONENT ---
 export default function FinanceDashboard() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [showIncomeForm, setShowIncomeForm] = useState(false);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [workflowState, dispatch] = useReducer(workflowReducer, {
     isAutoReconciling: false,
     lastSync: '08:00:00',
@@ -131,6 +428,25 @@ export default function FinanceDashboard() {
     }, 2000);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+  };
+
+  const handleAddTransaction = (transactionData: Omit<Transaction, 'id' | 'workflowStatus' | 'source'>) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: crypto.randomUUID(),
+      workflowStatus: 'synced',
+      source: 'Manual',
+    };
+    setTransactions(prev => [newTransaction, ...prev]);
+  };
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -138,16 +454,43 @@ export default function FinanceDashboard() {
           <h1 className="text-2xl md:text-3xl font-bold text-white">Rekapitulasi Keuangan</h1>
           <p className="text-slate-400 text-sm mt-1">Monitoring real-time dengan integrasi workflow otomatis</p>
         </div>
-        <button
-          onClick={handleManualReconcile}
-          disabled={workflowState.isAutoReconciling}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950"
-          aria-label="Trigger rekonsiliasi otomatis"
-        >
-          <RefreshCw className={`w-4 h-4 ${workflowState.isAutoReconciling ? 'animate-spin' : ''}`} />
-          {workflowState.isAutoReconciling ? 'Merekonsiliasi...' : 'Trigger Rekonsiliasi'}
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleManualReconcile}
+            disabled={workflowState.isAutoReconciling}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+            aria-label="Trigger rekonsiliasi otomatis"
+          >
+            <RefreshCw className={`w-4 h-4 ${workflowState.isAutoReconciling ? 'animate-spin' : ''}`} />
+            {workflowState.isAutoReconciling ? 'Merekonsiliasi...' : 'Trigger Rekonsiliasi'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
       </header>
+
+      {/* Tombol Tambah Transaksi */}
+      <section className="mb-8 flex flex-wrap gap-4">
+        <button
+          onClick={() => setShowIncomeForm(true)}
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          <PlusCircle className="w-5 h-5" />
+          Tambah Pemasukan
+        </button>
+        <button
+          onClick={() => setShowExpenseForm(true)}
+          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          <DollarSign className="w-5 h-5" />
+          Tambah Pengeluaran
+        </button>
+      </section>
 
       <section aria-label="Ringkasan Keuangan" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <SummaryCard title="Total Pemasukan" value={formatCurrency(financialSummary.income)} icon={TrendingUp} color="emerald" trend="+12.5%" />
@@ -265,6 +608,22 @@ export default function FinanceDashboard() {
           </table>
         </div>
       </section>
+
+      {/* Modal Form Pemasukan */}
+      {showIncomeForm && (
+        <IncomeForm
+          onAddTransaction={handleAddTransaction}
+          onClose={() => setShowIncomeForm(false)}
+        />
+      )}
+
+      {/* Modal Form Pengeluaran */}
+      {showExpenseForm && (
+        <ExpenseForm
+          onAddTransaction={handleAddTransaction}
+          onClose={() => setShowExpenseForm(false)}
+        />
+      )}
     </main>
   );
 }
